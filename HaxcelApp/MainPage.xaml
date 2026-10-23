@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="HaxcelApp.MainPage"
+             Title="Електронна таблиця">
+
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="Файл">
+            <MenuFlyoutItem Text="Створити" Clicked="NewButton_Clicked" />
+            <MenuFlyoutItem Text="Зберегти" Clicked="SaveButton_Clicked" />
+            <MenuFlyoutItem Text="Прочитати" Clicked="ReadButton_Clicked" />
+            <MenuFlyoutItem Text="Вийти" Clicked="ExitButton_Clicked" />
+        </MenuBarItem>
+        <MenuBarItem Text="Таблиця">
+            <MenuFlyoutItem Text="Порахувати" Clicked="CalculateButton_Clicked" />
+            <MenuFlyoutItem Text="Вираз / Значення" Clicked="ModeButton_Clicked" />
+            <MenuFlyoutItem Text="Додати рядок" Clicked="AddRowButton_Clicked" />
+            <MenuFlyoutItem Text="Видалити рядок" Clicked="DeleteRowButton_Clicked" />
+            <MenuFlyoutItem Text="Додати стовпчик" Clicked="AddColumnButton_Clicked" />
+            <MenuFlyoutItem Text="Видалити стовпчик" Clicked="DeleteColumnButton_Clicked" />
+        </MenuBarItem>
+        <MenuBarItem Text="Довідка">
+            <MenuFlyoutItem Text="Довідка" Clicked="HelpButton_Clicked" />
+            <MenuFlyoutItem Text="Про програму" Clicked="AboutButton_Clicked" />
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <FlexLayout Grid.Row="0" Grid.ColumnSpan="2" Wrap="Wrap">
+            <Button Text="Створити" Clicked="NewButton_Clicked" Margin="2" />
+            <Button Text="Зберегти" Clicked="SaveButton_Clicked" Margin="2" />
+            <Button Text="Прочитати" Clicked="ReadButton_Clicked" Margin="2" />
+            <Button Text="Вийти" Clicked="ExitButton_Clicked" Margin="2" />
+            <Button Text="Порахувати" Clicked="CalculateButton_Clicked" Margin="2" />
+            <Button x:Name="ModeButton" Text="Режим: ЗНАЧЕННЯ" Clicked="ModeButton_Clicked" Margin="2" />
+            <Button Text="Додати рядок" Clicked="AddRowButton_Clicked" Margin="2" />
+            <Button Text="Видалити рядок" Clicked="DeleteRowButton_Clicked" Margin="2" />
+            <Button Text="Додати стовпчик" Clicked="AddColumnButton_Clicked" Margin="2" />
+            <Button Text="Видалити стовпчик" Clicked="DeleteColumnButton_Clicked" Margin="2" />
+            <Button Text="Довідка" Clicked="HelpButton_Clicked" Margin="2" />
+            <Button Text="Про програму" Clicked="AboutButton_Clicked" Margin="2" />
+        </FlexLayout>
+
+        <Label x:Name="addressLabel" Grid.Row="1" Grid.Column="0" Text="A1"
+               FontAttributes="Bold" VerticalOptions="Center" Margin="8,0" />
+        <Entry x:Name="textInput" Placeholder="Введіть вираз" Grid.Row="1" Grid.Column="1"
+               Completed="TextInput_Completed" />
+
+        <ScrollView Grid.Row="2" Grid.ColumnSpan="2" Orientation="Both">
+            <Grid x:Name="grid" ColumnSpacing="1" RowSpacing="1" />
+        </ScrollView>
+
+        <Label x:Name="statusLabel" Grid.Row="3" Grid.ColumnSpan="2" Text="Готово" Margin="8,4" />
+    </Grid>
+</ContentPage>
