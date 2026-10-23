@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Haxcel.Core/Haxcel.Core.csproj" />
+  <Project Path="Haxcel.Tests/Haxcel.Tests.csproj" />
+  <Project Path="HaxcelApp/HaxcelApp.csproj" />
+</Solution>
