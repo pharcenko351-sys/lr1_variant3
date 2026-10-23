@@ -1,7 +1,6 @@
 # Haxcel
 
-Лабораторна робота №1, варіант 3. Електронна таблиця на C# (.NET MAUI, ANTLR4).
-
+Лабораторна робота №1, варіант 3. 
 Виконувала студентка групи К-28 Харченко Поліна.
 
 ## Завдання
@@ -30,11 +29,10 @@
 
 | Папка | Вміст |
 |---|---|
-| `Haxcel.Core` | логіка: граматика `LabCalculator.g4`, `Calculator`, `Visitor`, `ThrowExceptionErrorListener`, `TableData`, `Exceptions` |
-| `HaxcelApp` | інтерфейс MAUI: `MainPage.xaml`, `MainPage.xaml.cs` |
+| `Haxcel.Core` | `LabCalculator.g4`, `Calculator`, `Visitor`, `ThrowExceptionErrorListener`, `TableData`, `Exceptions` |
+| `HaxcelApp` | інтерфейс: `MainPage.xaml`, `MainPage.xaml.cs` |
 | `Haxcel.Tests` | автоматичні тести xUnit |
 | `TestData` | тестові файли таблиць: `valid.json`, `bigint.json`, `errors.json` |
-| `Diagrams` | діаграми класів, послідовності та варіантів використання (draw.io) |
 | `Screenshots` | скріншоти роботи програми |
 
 ## Як працює обчислення виразу
@@ -50,9 +48,9 @@
 
 ## Запуск
 
-Програма працює на Windows і на macOS. Потрібні .NET 10 SDK і workload MAUI (`dotnet workload install maui`).
+Програма працює на Windows і на macOS. Потрібні .NET 10 SDK і workload MAUI.
 
-Тести (однакові команди на Windows і macOS):
+Тести:
 
 ```
 dotnet test Haxcel.Tests
@@ -64,7 +62,7 @@ Windows:
 dotnet run --project HaxcelApp -f net10.0-windows10.0.19041.0
 ```
 
-macOS (додатково потрібен встановлений Xcode):
+macOS:
 
 ```
 dotnet run --project HaxcelApp -f net10.0-maccatalyst
@@ -79,5 +77,5 @@ dotnet run --project HaxcelApp -f net10.0-maccatalyst
 1. Клікніть на клітинку, введіть вираз і натисніть Enter або перейдіть в іншу клітинку.
 2. Кнопка «Режим» перемикає показ значень і виразів.
 3. Кнопка «Порахувати» перераховує всю таблицю.
-4. Кнопка «Зберегти» записує таблицю у файл `table.json`: у Windows це папка «Документи», у macOS папка Documents у контейнері програми (повний шлях показується у вікні після збереження).
-5. Кнопка «Прочитати» відкриває вікно вибору файлу. Готові приклади лежать у папці `TestData`.
+4. Кнопка «Зберегти» записує таблицю у файл `table.json`: у Windows це папка «Документи», у macOS папка Documents у контейнері програми.
+5. Кнопка «Прочитати» відкриває вікно вибору файлу. Приклади лежать у папці `TestData`.
