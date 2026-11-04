@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Antlr4.Runtime.Tree;
 
 namespace HaxcelApp.Core;
 
@@ -13,13 +14,15 @@ public class TableFile
 
 public class TableData
 {
-    public const int MaxRows = 50;
-    public const int MaxColumns = 26;
+    public const int MaxRows = 36;
+    public const int MaxColumns = 36;
 
     public int RowCount { get; private set; }
     public int ColumnCount { get; private set; }
 
     private readonly Dictionary<string, string> expressions = new();
+    private readonly Dictionary<string, IParseTree> trees = new();
+    private readonly Dictionary<string, string> syntaxErrors = new();
     private readonly Dictionary<string, BigInteger> values = new();
     private readonly Dictionary<string, string> errors = new();
     private readonly HashSet<string> visiting = new();
@@ -36,11 +39,12 @@ public class TableData
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            expressions.Remove(address);
+            RemoveCell(address);
         }
         else
         {
             expressions[address] = text;
+            ParseCell(address);
         }
         Recalculate();
     }
@@ -71,6 +75,11 @@ public class TableData
         values.Clear();
         errors.Clear();
         visiting.Clear();
+
+        foreach (var pair in syntaxErrors)
+        {
+            errors[pair.Key] = pair.Value;
+        }
 
         foreach (var address in expressions.Keys.ToList())
         {
@@ -111,15 +120,9 @@ public class TableData
 
         try
         {
-            var result = Calculator.Calculate(expressions[address], GetCellValue);
+            var result = Calculator.Calculate(trees[address], GetCellValue);
             values[address] = result;
             return result;
-        }
-        catch (ExpressionException ex)
-        {
-            string message = "Синтаксична помилка (позиція " + (ex.Position + 1) + "): " + ex.Message;
-            errors[address] = message;
-            throw new CalculationException(message);
         }
         catch (CalculationException ex)
         {
@@ -130,6 +133,28 @@ public class TableData
         {
             visiting.Remove(address);
         }
+    }
+
+    private void ParseCell(string address)
+    {
+        trees.Remove(address);
+        syntaxErrors.Remove(address);
+
+        try
+        {
+            trees[address] = Calculator.Parse(expressions[address]);
+        }
+        catch (ExpressionException ex)
+        {
+            syntaxErrors[address] = "Синтаксична помилка (позиція " + (ex.Position + 1) + "): " + ex.Message;
+        }
+    }
+
+    private void RemoveCell(string address)
+    {
+        expressions.Remove(address);
+        trees.Remove(address);
+        syntaxErrors.Remove(address);
     }
 
     public bool AddRow()
@@ -164,7 +189,7 @@ public class TableData
             TryParseAddress(address, out int col, out int row);
             if (row == RowCount - 1)
             {
-                expressions.Remove(address);
+                RemoveCell(address);
             }
         }
         RowCount--;
@@ -184,12 +209,40 @@ public class TableData
             TryParseAddress(address, out int col, out int row);
             if (col == ColumnCount - 1)
             {
-                expressions.Remove(address);
+                RemoveCell(address);
             }
         }
         ColumnCount--;
         Recalculate();
         return true;
+    }
+
+    public bool HasDataOutside(int rows, int columns)
+    {
+        foreach (var address in expressions.Keys)
+        {
+            TryParseAddress(address, out int col, out int row);
+            if (row >= rows || col >= columns)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void Resize(int rows, int columns)
+    {
+        RowCount = Math.Clamp(rows, 1, MaxRows);
+        ColumnCount = Math.Clamp(columns, 1, MaxColumns);
+
+        foreach (var address in expressions.Keys.ToList())
+        {
+            if (!IsAddressInRange(address))
+            {
+                RemoveCell(address);
+            }
+        }
+        Recalculate();
     }
 
     public bool IsLastRowEmpty()
@@ -218,7 +271,7 @@ public class TableData
         return true;
     }
 
-    public void Save(string path)
+    public string ToJson()
     {
         var file = new TableFile
         {
@@ -231,7 +284,12 @@ public class TableData
             WriteIndented = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
-        File.WriteAllText(path, JsonSerializer.Serialize(file, options));
+        return JsonSerializer.Serialize(file, options);
+    }
+
+    public void Save(string path)
+    {
+        File.WriteAllText(path, ToJson());
     }
 
     public static TableData Load(string path)
@@ -249,6 +307,7 @@ public class TableData
             if (table.IsAddressInRange(address) && !string.IsNullOrWhiteSpace(pair.Value))
             {
                 table.expressions[address] = pair.Value;
+                table.ParseCell(address);
             }
         }
         table.Recalculate();

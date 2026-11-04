@@ -22,9 +22,8 @@ public static class Calculator
         return parser.compileUnit();
     }
 
-    public static BigInteger Calculate(string expression, Func<string, BigInteger> getCellValue)
+    public static BigInteger Calculate(IParseTree tree, Func<string, BigInteger> getCellValue)
     {
-        var tree = Parse(expression);
         var visitor = new Visitor(getCellValue);
         return visitor.Visit(tree);
     }

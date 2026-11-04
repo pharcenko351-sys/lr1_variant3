@@ -88,6 +88,45 @@ public class HaxcelTests
     }
 
     [Fact]
+    public void Table_size_is_limited_to_36_by_36()
+    {
+        var table = new TableData();
+        for (int i = 0; i < 50; i++)
+        {
+            table.AddRow();
+            table.AddColumn();
+        }
+        Assert.Equal(36, table.RowCount);
+        Assert.Equal(36, table.ColumnCount);
+        Assert.Equal("AJ", TableData.GetColumnName(36));
+    }
+
+    [Fact]
+    public void Resize_changes_size_and_removes_outside_cells()
+    {
+        var table = MakeTable(("A1", "1"), ("E5", "2"));
+        Assert.True(table.HasDataOutside(4, 4));
+        Assert.False(table.HasDataOutside(5, 5));
+
+        table.Resize(4, 4);
+        Assert.Equal(4, table.RowCount);
+        Assert.Equal(4, table.ColumnCount);
+        Assert.Equal("", table.GetExpression("E5"));
+        Assert.Equal("1", table.GetValueText("A1"));
+
+        table.Resize(100, 100);
+        Assert.Equal(36, table.RowCount);
+        Assert.Equal(36, table.ColumnCount);
+    }
+
+    [Fact]
+    public void Syntax_error_is_written_to_cell()
+    {
+        var table = MakeTable(("A1", "2 + * 3"));
+        Assert.Contains("позиція 5", table.GetError("A1"));
+    }
+
+    [Fact]
     public void Save_and_load_gives_same_table()
     {
         string path = Path.Combine(Path.GetTempPath(), "lab1_test_" + Guid.NewGuid() + ".json");
