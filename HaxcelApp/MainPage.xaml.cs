@@ -270,10 +270,19 @@ public partial class MainPage : ContentPage
         bool rowsOk = int.TryParse(rowsEntry.Text, out int rows);
         bool columnsOk = int.TryParse(columnsEntry.Text, out int columns);
 
-        if (!rowsOk || !columnsOk || rows < 1 || rows > TableData.MaxRows || columns < 1 || columns > TableData.MaxColumns)
+        if (!rowsOk || !columnsOk || rows < 1 || columns < 1)
         {
-            statusLabel.Text = "Введіть кількість рядків і стовпчиків від 1 до " + TableData.MaxRows;
             UpdateSizeBoxes();
+            await DisplayAlertAsync("Помилка", "Введіть цілі числа від 1 до " + TableData.MaxRows + ".", "OK");
+            resizing = false;
+            return;
+        }
+
+        if (rows > TableData.MaxRows || columns > TableData.MaxColumns)
+        {
+            UpdateSizeBoxes();
+            await DisplayAlertAsync("Помилка",
+                "Максимальний розмір таблиці: " + TableData.MaxRows + " рядків і " + TableData.MaxColumns + " стовпчиків.", "OK");
             resizing = false;
             return;
         }
@@ -577,7 +586,7 @@ public partial class MainPage : ContentPage
         RefreshCells();
     }
 
-    private void AddRowButton_Clicked(object sender, EventArgs e)
+    private async void AddRowButton_Clicked(object sender, EventArgs e)
     {
         if (table.AddRow())
         {
@@ -586,11 +595,11 @@ public partial class MainPage : ContentPage
         }
         else
         {
-            statusLabel.Text = "Максимальна кількість рядків: " + TableData.MaxRows;
+            await DisplayAlertAsync("Помилка", "Максимальна кількість рядків: " + TableData.MaxRows + ".", "OK");
         }
     }
 
-    private void AddColumnButton_Clicked(object sender, EventArgs e)
+    private async void AddColumnButton_Clicked(object sender, EventArgs e)
     {
         if (table.AddColumn())
         {
@@ -599,7 +608,7 @@ public partial class MainPage : ContentPage
         }
         else
         {
-            statusLabel.Text = "Максимальна кількість стовпчиків: " + TableData.MaxColumns;
+            await DisplayAlertAsync("Помилка", "Максимальна кількість стовпчиків: " + TableData.MaxColumns + ".", "OK");
         }
     }
 

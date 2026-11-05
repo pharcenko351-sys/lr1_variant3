@@ -54,11 +54,11 @@
                 <Button x:Name="ModeButton" Text="Режим: ЗНАЧЕННЯ" Clicked="ModeButton_Clicked" Margin="2" />
                 <HorizontalStackLayout Spacing="4" Margin="8,2" VerticalOptions="Center">
                     <Label Text="Рядків:" VerticalOptions="Center" />
-                    <Entry x:Name="rowsEntry" WidthRequest="60" Keyboard="Numeric" MaxLength="2"
+                    <Entry x:Name="rowsEntry" WidthRequest="60" Keyboard="Numeric" MaxLength="3"
                            BackgroundColor="White" TextColor="Black"
                            Completed="Size_Completed" Unfocused="Size_Unfocused" />
                     <Label Text="Стовпчиків:" VerticalOptions="Center" />
-                    <Entry x:Name="columnsEntry" WidthRequest="60" Keyboard="Numeric" MaxLength="2"
+                    <Entry x:Name="columnsEntry" WidthRequest="60" Keyboard="Numeric" MaxLength="3"
                            BackgroundColor="White" TextColor="Black"
                            Completed="Size_Completed" Unfocused="Size_Unfocused" />
                 </HorizontalStackLayout>
