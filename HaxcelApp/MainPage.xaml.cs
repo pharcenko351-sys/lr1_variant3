@@ -206,7 +206,43 @@ public partial class MainPage : ContentPage
         {
             return "#ПОМИЛКА";
         }
-        return table.GetValueText(address);
+        return ShortenNumber(table.GetValueText(address));
+    }
+
+    private string ShortenNumber(string number)
+    {
+        if (number.Length <= 12)
+        {
+            return number;
+        }
+
+        string sign = "";
+        if (number.StartsWith("-"))
+        {
+            sign = "-";
+            number = number.Substring(1);
+        }
+        return sign + number[0] + "." + number.Substring(1, 5) + "E+" + (number.Length - 1);
+    }
+
+    private void UpdateResult()
+    {
+        if (table.IsAddressInRange(selectedAddress))
+        {
+            resultBox.Text = table.GetValueText(selectedAddress);
+        }
+        else
+        {
+            resultBox.Text = "";
+        }
+    }
+
+    private async Task WarnIfCycleAsync(string address)
+    {
+        if (table.HasCycleError(address))
+        {
+            await DisplayAlertAsync("Циклічне посилання", table.GetError(address), "OK");
+        }
     }
 
     private void RefreshCells()
@@ -233,11 +269,13 @@ public partial class MainPage : ContentPage
             }
         }
         updating = false;
+        UpdateResult();
     }
 
     private void ShowCellStatus(string address)
     {
         statusLabel.Text = table.GetError(address) ?? "";
+        UpdateResult();
     }
 
     private void TableChanged(string message)
@@ -245,8 +283,17 @@ public partial class MainPage : ContentPage
         if (!table.IsAddressInRange(selectedAddress))
         {
             selectedAddress = "A1";
-            addressLabel.Text = selectedAddress;
+            if (table.IsAddressInRange(selectedAddress))
+            {
+                addressLabel.Text = selectedAddress;
+            }
+            else
+            {
+                addressLabel.Text = "-";
+            }
+            textInput.Text = table.GetExpression(selectedAddress);
         }
+        textInput.IsEnabled = table.IsAddressInRange(selectedAddress);
         UpdateGridSize();
         RefreshCells();
         UpdateSizeBoxes();
@@ -270,10 +317,10 @@ public partial class MainPage : ContentPage
         bool rowsOk = int.TryParse(rowsEntry.Text, out int rows);
         bool columnsOk = int.TryParse(columnsEntry.Text, out int columns);
 
-        if (!rowsOk || !columnsOk || rows < 1 || columns < 1)
+        if (!rowsOk || !columnsOk || rows < 0 || columns < 0)
         {
             UpdateSizeBoxes();
-            await DisplayAlertAsync("Помилка", "Введіть цілі числа від 1 до " + TableData.MaxRows + ".", "OK");
+            await DisplayAlertAsync("Помилка", "Введіть цілі числа від 0 до " + TableData.MaxRows + ".", "OK");
             resizing = false;
             return;
         }
@@ -409,6 +456,7 @@ public partial class MainPage : ContentPage
         isModified = true;
         RefreshCells();
         ShowCellStatus(address);
+        Dispatcher.Dispatch(async () => await WarnIfCycleAsync(address));
         return true;
     }
 
@@ -436,8 +484,13 @@ public partial class MainPage : ContentPage
         entries[TableData.MakeAddress(col, row)].Focus();
     }
 
-    private void TextInput_Completed(object sender, EventArgs e)
+    private async void TextInput_Completed(object sender, EventArgs e)
     {
+        if (!table.IsAddressInRange(selectedAddress))
+        {
+            return;
+        }
+
         string text = textInput.Text ?? "";
         if (text != table.GetExpression(selectedAddress))
         {
@@ -446,6 +499,7 @@ public partial class MainPage : ContentPage
         table.SetExpression(selectedAddress, text);
         RefreshCells();
         ShowCellStatus(selectedAddress);
+        await WarnIfCycleAsync(selectedAddress);
     }
 
     private async Task<bool> SaveToFileAsync()
@@ -650,9 +704,10 @@ public partial class MainPage : ContentPage
     {
         await DisplayAlertAsync("Довідка",
             "Клікніть на клітинку, введіть вираз і натисніть Enter: курсор перейде в клітинку нижче. Backspace у порожній клітинці повертає на попередню.\n\n" +
-            "Кількість рядків і стовпчиків можна ввести у полях угорі (Enter або перехід в інше поле).\n\n" +
+            "Кількість рядків і стовпчиків можна ввести у полях угорі (Enter або перехід в інше поле), допустимо від 0.\n\n" +
+            "Результат вибраної клітинки показується і в клітинці, і в полі «Результат» поруч із рядком виразу. Дуже довге число в клітинці скорочується (1.23456E+29), повністю його видно в полі «Результат».\n\n" +
             "У виразі: цілі числа, адреси клітинок (A1), дужки, операції + - * / mod div, унарні + -, max(x, y), min(x, y).\n\n" +
-            "Помилки (клітинка червона, текст внизу): синтаксична з позицією, ділення на нуль, циклічне посилання.\n\n" +
+            "Помилки (клітинка червона, текст внизу): синтаксична з позицією, ділення на нуль, циклічне посилання, посилання на порожню клітинку.\n\n" +
             "Максимальний розмір таблиці: " + TableData.MaxRows + " на " + TableData.MaxColumns + ".\n" +
             "Кнопка «Режим» перемикає показ значень і виразів.",
             "Закрити");

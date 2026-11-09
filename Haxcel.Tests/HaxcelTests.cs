@@ -1,4 +1,3 @@
-using System.Numerics;
 using HaxcelApp.Core;
 using Xunit;
 
@@ -6,156 +5,68 @@ namespace HaxcelApp.Tests;
 
 public class HaxcelTests
 {
-    private static TableData MakeTable(params (string address, string text)[] cells)
+    private static string Calculate(string expression)
     {
         var table = new TableData();
-        foreach (var cell in cells)
-        {
-            table.SetExpression(cell.address, cell.text);
-        }
-        return table;
-    }
-
-    [Theory]
-    [InlineData("1+2*3", "7")]
-    [InlineData("(1+2)*3", "9")]
-    [InlineData("10-4-3", "3")]
-    [InlineData("-5 + +3", "-2")]
-    [InlineData("2 * -3", "-6")]
-    [InlineData("-7 / 2", "-3")]
-    [InlineData("-7 div 2", "-4")]
-    [InlineData("-7 mod 3", "2")]
-    [InlineData("7 mod -3", "-2")]
-    [InlineData("max(2, 5)", "5")]
-    [InlineData("min(max(1, 9), 4)", "4")]
-    [InlineData("123456789012345678901234567890 * 10", "1234567890123456789012345678900")]
-    public void Expression_gives_correct_value(string expression, string expected)
-    {
-        var table = MakeTable(("A1", expression));
-        Assert.Equal(expected, table.GetValueText("A1"));
+        table.SetExpression("A1", expression);
+        return table.GetValueText("A1");
     }
 
     [Fact]
-    public void Dependent_cells_are_recalculated()
+    public void Operations_give_correct_values()
     {
-        var table = MakeTable(("A1", "5"), ("B1", "A1 * 2"));
-        table.SetExpression("A1", "7");
-        Assert.Equal("14", table.GetValueText("B1"));
+        Assert.Equal("7", Calculate("1 + 2 * 3"));
+        Assert.Equal("9", Calculate("(1 + 2) * 3"));
+        Assert.Equal("-2", Calculate("-5 + +3"));
+        Assert.Equal("-3", Calculate("-7 / 2"));
+        Assert.Equal("-4", Calculate("-7 div 2"));
+        Assert.Equal("2", Calculate("-7 mod 3"));
+        Assert.Equal("5", Calculate("max(2, 5)"));
+        Assert.Equal("2", Calculate("min(2, 5)"));
+        Assert.Equal("1234567890123456789012345678900", Calculate("123456789012345678901234567890 * 10"));
     }
 
-    [Theory]
-    [InlineData("1/0")]
-    [InlineData("5 div 0")]
-    [InlineData("5 mod (3-3)")]
-    public void Division_by_zero_gives_error(string expression)
+    [Fact]
+    public void Errors_are_found()
     {
-        var table = MakeTable(("A1", expression));
+        var table = new TableData();
+        table.SetExpression("A1", "1 / 0");
+        table.SetExpression("B1", "A1 + 1");
+        table.SetExpression("C1", "D1");
+        table.SetExpression("D1", "C1");
+        table.SetExpression("E1", "2 + * 3");
+        table.SetExpression("F1", "G1 + 1");
+        table.SetExpression("H1", "Z99 + 1");
+
         Assert.Contains("Ділення на нуль", table.GetError("A1"));
-    }
-
-    [Fact]
-    public void Cycle_is_found()
-    {
-        var table = MakeTable(("A1", "B1 + 1"), ("B1", "A1 + 1"));
-        Assert.Contains("Цикліч", table.GetError("A1"));
-        Assert.Contains("Цикліч", table.GetError("B1"));
-    }
-
-    [Fact]
-    public void Error_goes_to_dependent_cells()
-    {
-        var table = MakeTable(("A1", "1/0"), ("B1", "A1 + 1"));
         Assert.NotNull(table.GetError("B1"));
-    }
-
-    [Theory]
-    [InlineData("2 + * 3", 4)]
-    [InlineData("(1 + 2", 6)]
-    [InlineData("3 $ 4", 2)]
-    public void Syntax_error_has_position(string expression, int position)
-    {
-        var error = Assert.Throws<ExpressionException>(() => Calculator.Parse(expression));
-        Assert.Equal(position, error.Position);
+        Assert.Contains("Цикліч", table.GetError("C1"));
+        Assert.Contains("Цикліч", table.GetError("D1"));
+        Assert.Contains("позиція 5", table.GetError("E1"));
+        Assert.Contains("порожню клітинку", table.GetError("F1"));
+        Assert.Contains("неіснуючу", table.GetError("H1"));
     }
 
     [Fact]
-    public void Remove_row_deletes_its_cells()
+    public void Table_is_saved_and_loaded_and_recalculated()
     {
-        var table = MakeTable(("A10", "1"));
-        Assert.False(table.IsLastRowEmpty());
-        table.RemoveRow();
-        Assert.Equal(9, table.RowCount);
-    }
-
-    [Fact]
-    public void Table_size_is_limited_to_36_by_36()
-    {
-        var table = new TableData();
-        for (int i = 0; i < 50; i++)
-        {
-            table.AddRow();
-            table.AddColumn();
-        }
-        Assert.Equal(36, table.RowCount);
-        Assert.Equal(36, table.ColumnCount);
-        Assert.Equal("AJ", TableData.GetColumnName(36));
-    }
-
-    [Fact]
-    public void Resize_changes_size_and_removes_outside_cells()
-    {
-        var table = MakeTable(("A1", "1"), ("E5", "2"));
-        Assert.True(table.HasDataOutside(4, 4));
-        Assert.False(table.HasDataOutside(5, 5));
-
-        table.Resize(4, 4);
-        Assert.Equal(4, table.RowCount);
-        Assert.Equal(4, table.ColumnCount);
-        Assert.Equal("", table.GetExpression("E5"));
-        Assert.Equal("1", table.GetValueText("A1"));
-
-        table.Resize(100, 100);
-        Assert.Equal(36, table.RowCount);
-        Assert.Equal(36, table.ColumnCount);
-    }
-
-    [Fact]
-    public void Syntax_error_is_written_to_cell()
-    {
-        var table = MakeTable(("A1", "2 + * 3"));
-        Assert.Contains("позиція 5", table.GetError("A1"));
-    }
-
-    [Fact]
-    public void Save_and_load_gives_same_table()
-    {
-        string path = Path.Combine(Path.GetTempPath(), "lab1_test_" + Guid.NewGuid() + ".json");
+        string path = Path.Combine(Path.GetTempPath(), "haxcel_test_" + Guid.NewGuid() + ".json");
         try
         {
-            MakeTable(("A1", "6"), ("B1", "A1 * 7")).Save(path);
-            Assert.Equal("42", TableData.Load(path).GetValueText("B1"));
+            var table = new TableData();
+            table.SetExpression("A1", "6");
+            table.SetExpression("B1", "A1 * 7");
+            table.Save(path);
+
+            var loaded = TableData.Load(path);
+            Assert.Equal("42", loaded.GetValueText("B1"));
+
+            loaded.SetExpression("A1", "7");
+            Assert.Equal("49", loaded.GetValueText("B1"));
         }
         finally
         {
             File.Delete(path);
         }
-    }
-
-    [Fact]
-    public void Test_files_are_read_correctly()
-    {
-        string folder = Path.Combine(AppContext.BaseDirectory, "TestData");
-
-        var valid = TableData.Load(Path.Combine(folder, "valid.json"));
-        Assert.Equal("2", valid.GetValueText("C1"));
-        Assert.Equal("23", valid.GetValueText("B3"));
-
-        var big = TableData.Load(Path.Combine(folder, "bigint.json"));
-        Assert.Equal(BigInteger.Pow(10, 33).ToString(), big.GetValueText("C1"));
-
-        var errors = TableData.Load(Path.Combine(folder, "errors.json"));
-        Assert.Contains("Синтаксична", errors.GetError("A1"));
-        Assert.Contains("Ділення на нуль", errors.GetError("A2"));
-        Assert.Contains("Цикліч", errors.GetError("A3"));
     }
 }

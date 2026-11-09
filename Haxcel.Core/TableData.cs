@@ -29,13 +29,17 @@ public class TableData
 
     public TableData(int rows = 10, int columns = 8)
     {
-        RowCount = Math.Clamp(rows, 1, MaxRows);
-        ColumnCount = Math.Clamp(columns, 1, MaxColumns);
+        RowCount = Math.Clamp(rows, 0, MaxRows);
+        ColumnCount = Math.Clamp(columns, 0, MaxColumns);
     }
 
     public void SetExpression(string address, string text)
     {
         address = NormalizeAddress(address);
+        if (!IsAddressInRange(address))
+        {
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -68,6 +72,12 @@ public class TableData
     {
         errors.TryGetValue(NormalizeAddress(address), out var error);
         return error;
+    }
+
+    public bool HasCycleError(string address)
+    {
+        string? error = GetError(address);
+        return error != null && error.Contains("Циклічне");
     }
 
     public void Recalculate()
@@ -103,7 +113,7 @@ public class TableData
         }
         if (!expressions.ContainsKey(address))
         {
-            return 0;
+            throw new CalculationException("Посилання на порожню клітинку " + address + " (у ній немає значення)");
         }
         if (errors.ContainsKey(address))
         {
@@ -164,6 +174,7 @@ public class TableData
             return false;
         }
         RowCount++;
+        Recalculate();
         return true;
     }
 
@@ -174,12 +185,13 @@ public class TableData
             return false;
         }
         ColumnCount++;
+        Recalculate();
         return true;
     }
 
     public bool RemoveRow()
     {
-        if (RowCount <= 1)
+        if (RowCount <= 0)
         {
             return false;
         }
@@ -199,7 +211,7 @@ public class TableData
 
     public bool RemoveColumn()
     {
-        if (ColumnCount <= 1)
+        if (ColumnCount <= 0)
         {
             return false;
         }
@@ -232,8 +244,8 @@ public class TableData
 
     public void Resize(int rows, int columns)
     {
-        RowCount = Math.Clamp(rows, 1, MaxRows);
-        ColumnCount = Math.Clamp(columns, 1, MaxColumns);
+        RowCount = Math.Clamp(rows, 0, MaxRows);
+        ColumnCount = Math.Clamp(columns, 0, MaxColumns);
 
         foreach (var address in expressions.Keys.ToList())
         {

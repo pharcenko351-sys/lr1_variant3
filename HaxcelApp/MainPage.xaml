@@ -78,8 +78,16 @@
 
         <Label x:Name="addressLabel" Grid.Row="2" Grid.Column="0" Text="A1"
                FontAttributes="Bold" VerticalOptions="Center" Margin="8,0" />
-        <Entry x:Name="textInput" Placeholder="Введіть вираз" Grid.Row="2" Grid.Column="1"
-               Completed="TextInput_Completed" />
+        <Grid Grid.Row="2" Grid.Column="1" ColumnSpacing="8" Margin="0,0,8,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Entry x:Name="textInput" Grid.Column="0" Placeholder="Введіть вираз"
+                   Completed="TextInput_Completed" />
+            <Editor x:Name="resultBox" Grid.Column="1" IsReadOnly="True" Placeholder="Результат"
+                    HeightRequest="44" />
+        </Grid>
 
         <ScrollView Grid.Row="3" Grid.ColumnSpan="2" Orientation="Both">
             <Grid x:Name="grid" ColumnSpacing="1" RowSpacing="1" />
